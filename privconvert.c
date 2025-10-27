@@ -484,6 +484,51 @@ static int update_config(const char *config_path, int new_unprivileged) {
     return 0;
 }
 
+/* Check if container is running */
+static int is_container_running(int container_id) {
+    char path[512];
+    DIR *dir;
+    
+    /* Check multiple cgroup locations for running container */
+    /* Try cgroup v2 first (modern systems) */
+    snprintf(path, sizeof(path), "/sys/fs/cgroup/lxc.monitor.%d", container_id);
+    dir = opendir(path);
+    if (dir) {
+        closedir(dir);
+        return 1;
+    }
+    
+    /* Try cgroup v1 systemd path */
+    snprintf(path, sizeof(path), "/sys/fs/cgroup/systemd/lxc/%d", container_id);
+    dir = opendir(path);
+    if (dir) {
+        closedir(dir);
+        return 1;
+    }
+    
+    /* Try alternative cgroup v1 path */
+    snprintf(path, sizeof(path), "/sys/fs/cgroup/lxc/%d", container_id);
+    dir = opendir(path);
+    if (dir) {
+        closedir(dir);
+        return 1;
+    }
+    
+    /* Check if pct status command works (Proxmox-specific) */
+    snprintf(path, sizeof(path), "pct status %d 2>/dev/null | grep -q 'status: running'", container_id);
+    if (system(path) == 0) {
+        return 1;
+    }
+    
+    /* Check for lock file */
+    snprintf(path, sizeof(path), "/var/lock/lxc/var/lib/lxc/%d", container_id);
+    if (access(path, F_OK) == 0) {
+        return 1;
+    }
+    
+    return 0;
+}
+
 /* Print usage */
 static void usage(const char *prog) {
     fprintf(stderr, "Usage: %s <container_number> <privileged|unprivileged>\n", prog);
@@ -524,6 +569,14 @@ int main(int argc, char *argv[]) {
     } else {
         fprintf(stderr, "Error: Mode must be 'privileged' or 'unprivileged'\n");
         usage(argv[0]);
+    }
+    
+    /* Check if container is running */
+    if (is_container_running(container_num)) {
+        fprintf(stderr, "Error: Container %d is currently running!\n", container_num);
+        fprintf(stderr, "Please stop the container before conversion:\n");
+        fprintf(stderr, "  pct stop %d\n", container_num);
+        return 1;
     }
     
     /* Construct config path */

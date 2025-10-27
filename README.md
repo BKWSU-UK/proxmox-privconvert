@@ -76,11 +76,12 @@ The program will:
 
 ### Safety Features
 
-- Confirms before making changes
-- Tracks inodes to handle hardlinks correctly (only processes each file once)
-- Validates that UIDs/GIDs stay in valid ranges
-- Preserves file permissions and special bits
-- Updates both access and default ACLs
+- **Detects running containers** - refuses to run if container is active
+- **Confirms before making changes** - interactive prompt with state display
+- **Tracks inodes** - handles hardlinks correctly (only processes each file once)
+- **Validates ranges** - ensures UIDs/GIDs stay in valid ranges
+- **Preserves permissions** - maintains file permissions and special bits (setuid/setgid)
+- **Updates ACLs** - handles both access and default ACLs correctly
 
 ## Installation
 
@@ -91,6 +92,8 @@ sudo make install
 This installs to `/usr/local/bin/privconvert`.
 
 ## Example
+
+### Successful Conversion
 
 ```bash
 $ sudo ./privconvert 111 unprivileged
@@ -120,6 +123,17 @@ Updating configuration file...
 Container 111 is now unprivileged
 ```
 
+### Running Container Protection
+
+```bash
+$ sudo ./privconvert 111 unprivileged
+Error: Container 111 is currently running!
+Please stop the container before conversion:
+  pct stop 111
+```
+
+The program detects running containers and refuses to proceed, preventing data corruption.
+
 ## Comparison with Python Version
 
 | Feature | Python (`privconvert.py`) | C (`privconvert`) |
@@ -128,6 +142,8 @@ Container 111 is now unprivileged
 | Dependencies | Python3 + pylibacl | **None (static)** |
 | Config parsing | Manual path input | **Automatic from Proxmox config** |
 | Storage support | Directory only | **ZFS + Directories** |
+| Snapshot handling | No | **Automatic** |
+| Running check | No | **Yes** |
 | Usage | 2 args (path, mode) | **2 args (container #, mode)** |
 
 ## License
