@@ -132,22 +132,3 @@ Please stop the container before conversion:
   pct stop 111
 ```
 
-The program detects running containers and refuses to proceed, preventing data corruption.
-
-## Comparison with Python Version
-
-| Feature | Python (`privconvert.py`) | C (`privconvert`) |
-|---------|---------------------------|-------------------|
-| Speed | Slow | **Fast** |
-| Dependencies | Python3 + pylibacl | **None (static)** |
-| Config parsing | Manual path input | **Automatic from Proxmox config** |
-| Storage support | Directory only | **ZFS + Directories** |
-| Snapshot handling | No | **Automatic** |
-| Running check | No | **Yes** |
-| Usage | 2 args (path, mode) | **2 args (container #, mode)** |
-
-## License
-
-This program incorporates logic from the original Python version by Tobias Brink (CC0 Public Domain).
-
-The C implementation is also released to the public domain under CC0.
