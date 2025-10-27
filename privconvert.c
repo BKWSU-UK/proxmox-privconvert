@@ -613,7 +613,6 @@ int main(int argc, char *argv[]) {
     
     /* Require confirmation */
     printf("\nWARNING: This operation will modify file ownership.\n");
-    printf("Make sure the container is stopped!\n");
     printf("\nProceed? [y/N] ");
     fflush(stdout);
     
